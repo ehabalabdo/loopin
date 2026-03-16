@@ -1,0 +1,288 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============ المستخدمين والصلاحيات ============
+
+enum Role {
+  MANAGER
+  ACCOUNTANT
+  EMPLOYEE
+}
+
+model User {
+  id            String   @id @default(cuid())
+  name          String
+  email         String   @unique
+  password      String
+  phone         String?
+  role          Role     @default(EMPLOYEE)
+  salary        Decimal  @default(0) @db.Decimal(10, 3)
+  hireDate      DateTime @default(now())
+  workType      String   @default("remote")
+  timezone      String   @default("Asia/Amman")
+  leaveBalance  Int      @default(14)
+  sickLeave     Int      @default(14)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  workSchedule    WorkSchedule?
+  attendances     Attendance[]
+  leaveRequests   LeaveRequest[]
+  dailyReports    DailyReport[]
+  warnings        Warning[]
+  deductions      Deduction[]
+  payslips        Payslip[]
+  news            News[]           @relation
+  newsReads       NewsRead[]
+  notifications   Notification[]
+}
+
+model WorkSchedule {
+  id          String   @id @default(cuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sunday      Boolean  @default(true)
+  monday      Boolean  @default(true)
+  tuesday     Boolean  @default(true)
+  wednesday   Boolean  @default(true)
+  thursday    Boolean  @default(true)
+  friday      Boolean  @default(false)
+  saturday    Boolean  @default(false)
+  startTime   String   @default("09:00")
+  endTime     String   @default("17:00")
+}
+
+model Attendance {
+  id            String    @id @default(cuid())
+  userId        String
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkIn       DateTime
+  breakStart    DateTime?
+  breakEnd      DateTime?
+  checkOut      DateTime?
+  totalHours    Decimal?  @db.Decimal(5, 2)
+  status        String    @default("PRESENT")
+  createdAt     DateTime  @default(now())
+}
+
+model DailyReport {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
+  date      DateTime @default(now())
+  createdAt DateTime @default(now())
+}
+
+enum LeaveType {
+  ANNUAL
+  SICK
+  UNPAID
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model LeaveRequest {
+  id           String      @id @default(cuid())
+  userId       String
+  user         User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type         LeaveType
+  status       LeaveStatus @default(PENDING)
+  startDate    DateTime    @db.Date
+  endDate      DateTime    @db.Date
+  reason       String?
+  rejectReason String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+}
+
+enum WarningType {
+  NOTICE
+  WARNING
+  DEDUCTION
+}
+
+model Warning {
+  id        String      @id @default(cuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      WarningType
+  reason    String
+  amount    Decimal?    @db.Decimal(10, 3)
+  createdAt DateTime    @default(now())
+}
+
+model Deduction {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  amount    Decimal  @db.Decimal(10, 3)
+  reason    String
+  month     Int
+  year      Int
+  createdAt DateTime @default(now())
+}
+
+model Payslip {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  month      Int
+  year       Int
+  baseSalary Decimal  @db.Decimal(10, 3)
+  deductions Decimal  @db.Decimal(10, 3) @default(0)
+  netSalary  Decimal  @db.Decimal(10, 3)
+  isPaid     Boolean  @default(false)
+  paidAt     DateTime?
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, month, year])
+}
+
+enum SubscriptionType {
+  MONTHLY
+  QUARTERLY
+  SEMI_ANNUAL
+  ANNUAL
+}
+
+enum ServiceType {
+  SOCIAL_MEDIA
+  VIDEO
+}
+
+model Client {
+  id               String            @id @default(cuid())
+  name             String
+  phone            String
+  email            String?
+  subscriptionType SubscriptionType?
+  serviceType      ServiceType
+  amount           Decimal           @db.Decimal(10, 3)
+  startDate        DateTime?         @db.Date
+  endDate          DateTime?         @db.Date
+  isActive         Boolean           @default(true)
+  notes            String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  invoices         Invoice[]
+  payments         Payment[]
+}
+
+enum InvoiceStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+model Invoice {
+  id              String        @id @default(cuid())
+  clientId        String
+  client          Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  invoiceNumber   String        @unique
+  amount          Decimal       @db.Decimal(10, 3)
+  paidAmount      Decimal       @db.Decimal(10, 3) @default(0)
+  remainingAmount Decimal       @db.Decimal(10, 3)
+  status          InvoiceStatus @default(PENDING)
+  description     String?
+  dueDate         DateTime      @db.Date
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  payments        Payment[]
+}
+
+enum PaymentMethod {
+  CASH
+  BANK_TRANSFER
+  CHECK
+  CLIQ
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  invoiceId String
+  invoice   Invoice       @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    Client        @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  amount    Decimal       @db.Decimal(10, 3)
+  method    PaymentMethod
+  reference String?
+  notes     String?
+  paidAt    DateTime      @default(now())
+  createdAt DateTime      @default(now())
+}
+
+enum ExpenseCategory {
+  SALARIES
+  RENT
+  SUBSCRIPTIONS
+  UTILITIES
+  MISCELLANEOUS
+  GOVERNMENT
+  EQUIPMENT
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  category    ExpenseCategory
+  amount      Decimal         @db.Decimal(10, 3)
+  description String
+  date        DateTime        @db.Date
+  receipt     String?
+  createdAt   DateTime        @default(now())
+}
+
+model News {
+  id        String     @id @default(cuid())
+  title     String
+  content   String     @db.Text
+  authorId  String
+  author    User       @relation(fields: [authorId], references: [id])
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  reads     NewsRead[]
+}
+
+model NewsRead {
+  id     String   @id @default(cuid())
+  newsId String
+  news   News     @relation(fields: [newsId], references: [id], onDelete: Cascade)
+  userId String
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt DateTime @default(now())
+
+  @@unique([newsId, userId])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+}
+
+model Settings {
+  id              String  @id @default(cuid())
+  companyName     String  @default("Loop")
+  companyEmail    String  @default("")
+  companyPhone    String?
+  taxNumber       String?
+  efatooraApiKey  String?
+  efatooraEnabled Boolean @default(false)
+}

@@ -8,10 +8,11 @@ import { createNotification } from "@/lib/notifications";
 
 export async function getEmployees() {
   await requireRole(["MANAGER"]);
-  return prisma.user.findMany({
+  const employees = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
     include: { workSchedule: true },
   });
+  return employees.map((e) => ({ ...e, salary: Number(e.salary) }));
 }
 
 export async function createEmployee(formData: FormData) {

@@ -6,12 +6,17 @@ import { revalidatePath } from "next/cache";
 
 export async function getClients() {
   await requireRole(["MANAGER", "ACCOUNTANT"]);
-  return prisma.client.findMany({
+  const clients = await prisma.client.findMany({
     orderBy: { createdAt: "desc" },
     include: {
       invoices: { select: { id: true, status: true, remainingAmount: true } },
     },
   });
+  return clients.map((c) => ({
+    ...c,
+    amount: Number(c.amount),
+    invoices: c.invoices.map((i) => ({ ...i, remainingAmount: Number(i.remainingAmount) })),
+  }));
 }
 
 export async function createClient(formData: FormData) {

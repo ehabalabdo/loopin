@@ -37,7 +37,7 @@ export async function getPayrollData(month: number, year: number) {
         user: { id: user.id, name: user.name, email: user.email, salary: Number(user.salary) },
         workingDays,
         totalHours: Math.round(totalHours * 100) / 100,
-        deductions,
+        deductions: deductions.map((d) => ({ id: d.id, amount: Number(d.amount), reason: d.reason })),
         totalDeductions,
         netSalary: Number(user.salary) - totalDeductions,
         payslip: existingPayslip,

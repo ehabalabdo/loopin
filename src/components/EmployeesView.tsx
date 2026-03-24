@@ -154,9 +154,14 @@ export default function EmployeesView({ employees: initialEmployees }: { employe
             </div>
           </div>
 
-          <button type="submit" className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg hover:opacity-90">
-            إضافة
-          </button>
+          <div className="flex gap-3 pt-4 border-t border-gray-200">
+            <button type="submit" className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-bold text-base">
+              ✅ حفظ الموظف
+            </button>
+            <button type="button" onClick={() => setShowAdd(false)} className="px-6 py-3 rounded-lg border border-gray-300 hover:bg-gray-50 text-base">
+              إلغاء
+            </button>
+          </div>
         </form>
       )}
 

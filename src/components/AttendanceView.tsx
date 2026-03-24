@@ -26,6 +26,8 @@ export default function AttendanceView({
 }) {
   const [error, setError] = useState("");
   const [showReport, setShowReport] = useState(false);
+  const [reportText, setReportText] = useState("");
+  const [reportConfirmed, setReportConfirmed] = useState(false);
   const [biometricRegistered, setBiometricRegistered] = useState(false);
   const [biometricSupported, setBiometricSupported] = useState(false);
   const [biometricLoading, setBiometricLoading] = useState(false);
@@ -242,39 +244,71 @@ export default function AttendanceView({
       )}
 
       {/* نموذج التقرير اليومي */}
-      {showReport && (
+      {showReport && !reportConfirmed && (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-200">
           <h3 className="font-bold text-lg mb-3">📝 التقرير اليومي (مطلوب قبل الخروج)</h3>
-          <form
-            action={async (formData) => {
-              setError("");
-              try {
-                const verified = await verifyBiometric();
-                if (!verified) return;
-                await checkOut(formData);
-                setShowReport(false);
-              } catch (e: unknown) {
-                setError(e instanceof Error ? e.message : "حدث خطأ");
-              }
-            }}
-            className="space-y-4"
-          >
+          <div className="space-y-4">
             <textarea
-              name="report"
-              required
+              value={reportText}
+              onChange={(e) => setReportText(e.target.value)}
               rows={5}
               placeholder="اكتب ملخص ما أنجزته اليوم... (10 أحرف على الأقل)"
               className="w-full p-3 rounded-lg border border-gray-200 resize-none"
             />
             <div className="flex gap-3">
-              <button type="submit" className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg hover:opacity-90">
-                إرسال التقرير وتسجيل الخروج
+              <button
+                type="button"
+                disabled={reportText.trim().length < 10}
+                onClick={() => setReportConfirmed(true)}
+                className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 font-bold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                ✅ موافق
               </button>
-              <button type="button" onClick={() => setShowReport(false)} className="px-6 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+              <button type="button" onClick={() => { setShowReport(false); setReportText(""); }} className="px-6 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
                 إلغاء
               </button>
             </div>
-          </form>
+            {reportText.trim().length > 0 && reportText.trim().length < 10 && (
+              <p className="text-sm text-red-500">التقرير لازم يكون 10 أحرف على الأقل</p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* خطوة البصمة بعد الموافقة */}
+      {showReport && reportConfirmed && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-green-200">
+          <h3 className="font-bold text-lg mb-3">🔐 تأكيد الهوية لتسجيل الخروج</h3>
+          <p className="text-gray-600 mb-4">تم حفظ التقرير. الآن أكّد هويتك بالبصمة أو Face ID لإتمام تسجيل الخروج.</p>
+          <div className="bg-gray-50 rounded-lg p-3 mb-4 text-sm text-gray-700">
+            <strong>التقرير:</strong> {reportText}
+          </div>
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={async () => {
+                setError("");
+                try {
+                  const verified = await verifyBiometric();
+                  if (!verified) return;
+                  const formData = new FormData();
+                  formData.append("report", reportText);
+                  await checkOut(formData);
+                  setShowReport(false);
+                  setReportConfirmed(false);
+                  setReportText("");
+                } catch (e: unknown) {
+                  setError(e instanceof Error ? e.message : "حدث خطأ");
+                }
+              }}
+              className="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700 font-bold text-lg"
+            >
+              🔐 تأكيد بالبصمة وتسجيل الخروج
+            </button>
+            <button type="button" onClick={() => setReportConfirmed(false)} className="px-6 py-2 rounded-lg border border-gray-200 hover:bg-gray-50">
+              رجوع
+            </button>
+          </div>
         </div>
       )}
 

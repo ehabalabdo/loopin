@@ -72,7 +72,7 @@ export default function NotificationBell({ userId }: NotificationBellProps) {
       </button>
 
       {open && (
-        <div className="absolute left-0 top-12 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 max-h-96 overflow-y-auto z-50">
+        <div className="absolute left-0 top-12 w-80 max-w-[90vw] bg-white rounded-xl shadow-2xl border border-gray-100 max-h-96 overflow-y-auto z-50">
           <div className="p-4 border-b border-gray-100">
             <h3 className="font-bold text-[#181719]">الإشعارات</h3>
           </div>

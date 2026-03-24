@@ -151,8 +151,8 @@ export default function FinanceView({ data }: { data: FinanceData }) {
             </form>
           )}
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <table className="w-full">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+            <table className="w-full min-w-[800px]">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-right px-6 py-4 text-sm font-medium text-gray-500">رقم الفاتورة</th>
@@ -273,8 +273,8 @@ export default function FinanceView({ data }: { data: FinanceData }) {
             </form>
           )}
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-            <table className="w-full">
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-x-auto">
+            <table className="w-full min-w-[600px]">
               <thead className="bg-gray-50">
                 <tr>
                   <th className="text-right px-6 py-4 text-sm font-medium text-gray-500">الفئة</th>

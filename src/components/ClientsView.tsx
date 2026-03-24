@@ -113,8 +113,8 @@ export default function ClientsView({ clients }: { clients: ClientData[] }) {
               <input name="notes" className="w-full px-4 py-2 border rounded-xl bg-[#f2f2f1]" />
             </div>
           </div>
-          <button type="submit" className="px-6 py-2 bg-[#9ddad0] text-[#181719] rounded-xl font-medium hover:bg-[#8ccbc1] transition">
-            حفظ العميل
+          <button type="submit" className="px-8 py-3 bg-green-600 text-white rounded-xl font-bold text-base hover:bg-green-700 transition">
+            ✅ حفظ العميل
           </button>
         </form>
       )}

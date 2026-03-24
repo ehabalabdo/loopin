@@ -21,11 +21,15 @@ export async function createNews(formData: FormData) {
 
   const title = formData.get("title") as string;
   const content = formData.get("content") as string;
+  const mediaUrl = formData.get("mediaUrl") as string | null;
+  const mediaType = formData.get("mediaType") as string | null;
 
   const news = await prisma.news.create({
     data: {
       title,
       content,
+      mediaUrl: mediaUrl || null,
+      mediaType: mediaType || null,
       authorId: session.id,
     },
   });

@@ -248,6 +248,8 @@ model News {
   id        String     @id @default(cuid())
   title     String
   content   String     @db.Text
+  mediaUrl  String?    @db.Text
+  mediaType String?
   authorId  String
   author    User       @relation(fields: [authorId], references: [id])
   createdAt DateTime   @default(now())

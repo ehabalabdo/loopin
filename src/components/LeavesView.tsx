@@ -109,8 +109,8 @@ export default function LeavesView({ leaves, role }: { leaves: LeaveRequest[]; r
             <label className="block text-sm text-gray-600 mb-1">السبب</label>
             <textarea name="reason" rows={3} className="w-full p-2 rounded-lg border border-gray-200" />
           </div>
-          <button type="submit" className="bg-[var(--color-primary)] text-white px-6 py-2 rounded-lg hover:opacity-90">
-            إرسال الطلب
+          <button type="submit" className="bg-green-600 text-white px-8 py-3 rounded-lg hover:bg-green-700 font-bold text-base">
+            ✅ إرسال الطلب
           </button>
         </form>
       )}

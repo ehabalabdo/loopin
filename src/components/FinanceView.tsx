@@ -147,7 +147,7 @@ export default function FinanceView({ data }: { data: FinanceData }) {
                   <input name="description" className="w-full px-4 py-2 border rounded-xl bg-[#f2f2f1]" />
                 </div>
               </div>
-              <button type="submit" className="px-6 py-2 bg-[#9ddad0] text-[#181719] rounded-xl font-medium">حفظ الفاتورة</button>
+              <button type="submit" className="px-8 py-3 bg-green-600 text-white rounded-xl font-bold text-base hover:bg-green-700">✅ حفظ الفاتورة</button>
             </form>
           )}
 
@@ -269,7 +269,7 @@ export default function FinanceView({ data }: { data: FinanceData }) {
                   <input name="date" type="date" required className="w-full px-4 py-2 border rounded-xl bg-[#f2f2f1]" />
                 </div>
               </div>
-              <button type="submit" className="px-6 py-2 bg-[#9ddad0] text-[#181719] rounded-xl font-medium">حفظ المصروف</button>
+              <button type="submit" className="px-8 py-3 bg-green-600 text-white rounded-xl font-bold text-base hover:bg-green-700">✅ حفظ المصروف</button>
             </form>
           )}
 

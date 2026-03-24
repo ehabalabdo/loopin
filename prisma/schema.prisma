@@ -41,6 +41,7 @@ model User {
   news            News[]           @relation
   newsReads       NewsRead[]
   notifications   Notification[]
+  webauthnCredentials WebAuthnCredential[]
 }
 
 model WorkSchedule {
@@ -285,4 +286,16 @@ model Settings {
   taxNumber       String?
   efatooraApiKey  String?
   efatooraEnabled Boolean @default(false)
+}
+
+model WebAuthnCredential {
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credentialId      String   @unique
+  publicKey         String   @db.Text
+  counter           BigInt   @default(0)
+  deviceName        String   @default("جهاز غير معروف")
+  transports        String?
+  createdAt         DateTime @default(now())
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { checkIn, breakOut, breakIn, checkOut } from "@/app/(app)/attendance/actions";
+import { startRegistration, startAuthentication } from "@simplewebauthn/browser";
 
 interface AttendanceRecord {
   id: string;
@@ -25,10 +26,93 @@ export default function AttendanceView({
 }) {
   const [error, setError] = useState("");
   const [showReport, setShowReport] = useState(false);
+  const [biometricRegistered, setBiometricRegistered] = useState(false);
+  const [biometricSupported, setBiometricSupported] = useState(false);
+  const [biometricLoading, setBiometricLoading] = useState(false);
+
+  useEffect(() => {
+    // Check if WebAuthn is supported
+    const supported = typeof window !== "undefined" && !!window.PublicKeyCredential;
+    setBiometricSupported(supported);
+
+    // Check if user has registered biometrics
+    fetch("/api/webauthn/status")
+      .then((r) => r.json())
+      .then((d) => setBiometricRegistered(d.registered))
+      .catch(() => {});
+  }, []);
+
+  // Register biometric (fingerprint/Face ID)
+  const registerBiometric = async () => {
+    setError("");
+    setBiometricLoading(true);
+    try {
+      const optRes = await fetch("/api/webauthn/register");
+      if (!optRes.ok) throw new Error("فشل بدء التسجيل");
+      const options = await optRes.json();
+
+      const attestation = await startRegistration({ optionsJSON: options });
+
+      const verRes = await fetch("/api/webauthn/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(attestation),
+      });
+
+      if (!verRes.ok) {
+        const data = await verRes.json();
+        throw new Error(data.error || "فشل تسجيل البصمة");
+      }
+
+      setBiometricRegistered(true);
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "NotAllowedError") {
+        setError("تم إلغاء تسجيل البصمة");
+      } else {
+        setError(e instanceof Error ? e.message : "فشل تسجيل البصمة");
+      }
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
+
+  // Verify biometric before action
+  const verifyBiometric = async (): Promise<boolean> => {
+    if (!biometricRegistered) return true; // Skip if no biometric registered
+    try {
+      const optRes = await fetch("/api/webauthn/verify");
+      if (!optRes.ok) return true; // Skip if error
+      const options = await optRes.json();
+
+      const assertion = await startAuthentication({ optionsJSON: options });
+
+      const verRes = await fetch("/api/webauthn/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(assertion),
+      });
+
+      if (!verRes.ok) {
+        const data = await verRes.json();
+        throw new Error(data.error || "فشل التحقق");
+      }
+      return true;
+    } catch (e: unknown) {
+      if (e instanceof Error && e.name === "NotAllowedError") {
+        setError("تم إلغاء التحقق من البصمة");
+      } else {
+        setError(e instanceof Error ? e.message : "فشل التحقق من الهوية");
+      }
+      return false;
+    }
+  };
 
   const handleAction = async (action: () => Promise<void>) => {
     setError("");
     try {
+      // Verify biometric before attendance actions
+      const verified = await verifyBiometric();
+      if (!verified) return;
       await action();
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "حدث خطأ");
@@ -74,7 +158,7 @@ export default function AttendanceView({
           </div>
 
           {today && (
-            <div className="flex gap-4 text-sm text-gray-600">
+            <div className="flex gap-4 text-sm text-gray-600 flex-wrap">
               <div>تسجيل الدخول: <strong>{formatTime(today.checkIn)}</strong></div>
               {today.breakStart && <div>بداية الاستراحة: <strong>{formatTime(today.breakStart)}</strong></div>}
               {today.breakEnd && <div>نهاية الاستراحة: <strong>{formatTime(today.breakEnd)}</strong></div>}
@@ -91,7 +175,7 @@ export default function AttendanceView({
               onClick={() => handleAction(checkIn)}
               className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 text-lg"
             >
-              ✅ تسجيل الدخول
+              {biometricRegistered ? "🔐" : "✅"} تسجيل الدخول {biometricRegistered ? "(بالبصمة)" : ""}
             </button>
           )}
 
@@ -124,6 +208,39 @@ export default function AttendanceView({
         </div>
       </div>
 
+      {/* تسجيل البصمة */}
+      {biometricSupported && (
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h3 className="font-bold text-lg flex items-center gap-2">
+                🔐 البصمة / Face ID
+              </h3>
+              <p className="text-sm text-gray-500 mt-1">
+                {biometricRegistered
+                  ? "✅ تم تسجيل البصمة - سيتم التحقق من هويتك عند كل بصمة حضور"
+                  : "سجّل بصمتك أو Face ID لتأكيد هويتك عند تسجيل الحضور"}
+              </p>
+            </div>
+            <button
+              onClick={registerBiometric}
+              disabled={biometricLoading}
+              className={`px-6 py-3 rounded-lg font-medium ${
+                biometricRegistered
+                  ? "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  : "bg-[#181719] text-white hover:opacity-90"
+              }`}
+            >
+              {biometricLoading
+                ? "⏳ جاري التسجيل..."
+                : biometricRegistered
+                ? "📱 تسجيل جهاز إضافي"
+                : "📱 تسجيل البصمة / Face ID"}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* نموذج التقرير اليومي */}
       {showReport && (
         <div className="bg-white rounded-xl p-6 shadow-sm border border-blue-200">
@@ -132,6 +249,8 @@ export default function AttendanceView({
             action={async (formData) => {
               setError("");
               try {
+                const verified = await verifyBiometric();
+                if (!verified) return;
                 await checkOut(formData);
                 setShowReport(false);
               } catch (e: unknown) {
